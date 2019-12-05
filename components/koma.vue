@@ -27,12 +27,18 @@ export default {
       this.$emit("action", this.idx);
     },
     kanji:function() {
-      if(this.na == "fu") {
+      if(this.na == "fu" && !this.nari) {
         return "歩";
       }
-      else if (this.na == "gin") {
+      else if(this.na == "fu"  && this.nari) {
+        return "と";
+      }
+      else if (this.na == "gin" &&!this.nari) {
         return "銀";
-      }else{
+      }else if (this.na == "gin" && this.nari) {
+        return "全";
+      }
+      else{
         return "玉";
       }
     }
