@@ -11,7 +11,8 @@ export default {
 
   computed:{
     trans: function(){
-      return "translate(" + parseInt(this.x)*100 + "," + parseInt(this.y)*100 + ")";
+      //return "translate(" + parseInt(this.x)*100 + "," + parseInt(this.y)*100 + ")";
+          return "translate(" + parseInt(this.x)*100 + "," + parseInt(this.y)*100 + ")";
     },
     points:function(){
       if (this.teban==0){

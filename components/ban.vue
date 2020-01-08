@@ -1,3 +1,4 @@
+
 <template>
   <div>
     <div v-if="teban!=null"> You are {{teban}}</div>
@@ -10,6 +11,20 @@
         <koma v-for="(f,idx) in games[0].koma"  @action="act(0,idx)" :teban="f.teban" :x="f.x" :y="f.y" :idx="idx" :na ="f.na" :nari = "f.nari"></koma>
       </g>
     </svg>
+    <div id ="popup-on">
+    <div class="popup">
+    <label for="popup-on" class="icon-close">×</label>
+    <div class="popup-content">
+       <!-- ポップアップの中身 -->
+       <br>成りますか？<br>
+      <!-- <img src="https://homepagenopro.com/wp-content/uploads/2018/08/d11_img_mizudori.png" alt="" class="layer-img"> -->
+        <!-- ./ポップアップの中身　ここまで -->
+    </div>
+    <label for="popup-on"><button class="btn-close"　v-on:click="closeModalAndNaru">成る</button></label>
+    <label for="popup-on"><button class="btn-close"　v-on:click="closeModalAndNarazu">成らない</button></label>
+    <!-- <label for="popup-on"><button class="btn-close"　v-on:click="closeModal">閉じる</button></label> -->
+  </div>
+</div>
     <!-- playingじゃないとき -->
     <v-btn v-if="!playing" @click = "start">start</v-btn>
   </div>
@@ -21,7 +36,6 @@ import axios from 'axios';
 import firebase from "~/plugins/firebase.js";
 import { mapGetters} from 'vuex';
 const db = firebase.firestore();
-
 export default{
   components:{
     koma
@@ -38,6 +52,11 @@ export default{
       teban:null,
       chosen:null,
       playing:false,
+      ginNaru:false,
+      ginTemochi:false,
+      gidx:0,
+      gi:0,
+      gj:0,
     };
   },
   computed: {
@@ -70,6 +89,53 @@ export default{
       ref.update(initialData);
     })
   },
+  closeModal: function(){
+    //this.showContent = false
+    var el = document.getElementById('popup-on');   // 要素を指定
+  el.style.display = "none";
+  //this.move2(idx,i,j,nari);
+
+  },
+  openModal: function(){
+    //this.showContent = false
+    var el = document.getElementById('popup-on');   // 要素を指定
+  el.style.display = "block";
+  //return 1;
+
+  },
+  closeModalAndNaru: function(){
+
+   var el = document.getElementById('popup-on');   // 要素を指定
+ el.style.display = "none";
+ this.move2(this.gidx,this.gi,this.gj,true);
+   // this.games[0].koma[idx].nari = true
+
+ },
+ closeModalAndNarazu: function(){
+
+
+   var el = document.getElementById('popup-on');   // 要素を指定
+ el.style.display = "none";
+ this.move2(this.gidx,this.gi,this.gj,false);
+ },
+  //  getRuleBySelector: function(sele){
+  //   var i, j, sheets, rules, rule = null;
+  //
+  //   // stylesheetのリストを取得
+  //   sheets = document.styleSheets;
+  //   for(i=0; i<sheets.length; i++){
+  //       // そのstylesheetが持つCSSルールのリストを取得
+  //       rules = sheets[i].cssRules;
+  //       for(j=0; j<rules.length; j++){
+  //           // セレクタが一致するか調べる
+  //           if(sele === rules[j].selectorText){
+  //               rule = rules[j];
+  //               break;
+  //           }
+  //       }
+  //   }
+  //   return rule;
+  // },
   direction(teban){
     if (teban==0){
       return "scale(1,-1) translate(100,-500)";
@@ -78,11 +144,14 @@ export default{
       return "scale(1,1)";
     }
   },
+
   //dbのデータを見て動けるか判断する
   possiblePositionsFu: function(i, komas){
     let koma = komas[i];
     let dir = (this.teban == 0?1:-1);
     let positions =[];
+      this.ginNaru = false;
+      this.ginTemoch = false;
     //if (!koma.nari){
     // if (true){
     if(koma.y<1|koma.y>3){
@@ -100,6 +169,8 @@ export default{
         //これ以上進めないところに置けないようにする
         line2 = koma.teban*(-2) + 3;
       }
+
+
       //iが横 jが縦
       for(var i = 1; i<4;i++) {
         for(var j=1;j<4;j++){
@@ -123,6 +194,14 @@ export default{
         ugoki = this.ugoki['kin'];
       }else{
         ugoki = this.ugoki[koma.na];
+        //持ち駒ではなくそれが銀だった時
+        if(koma.na=="gin" &&  koma.y == koma.teban*(-2) + 3){
+
+        this.ginNaru = true;
+      }
+      if(koma.na == "gin"){
+        this.ginTemochi = true;
+      }
       }
       //for(let u of this.ugoki[koma.na]) {
       for(let u of ugoki) {
@@ -143,7 +222,6 @@ export default{
       return true;
     }
     else return false;
-
   },
   //自分の駒がないことを確認
   //駒があったらfalse
@@ -155,7 +233,6 @@ export default{
       }
     }
     return true;
-
   },
   //そこに相手の駒があるかをみる
   //db
@@ -272,7 +349,6 @@ export default{
             }
           }
         }
-
       }
       console.log("他の駒が取れません");
       var ugoki = this.ugoki['ou'];
@@ -286,11 +362,9 @@ export default{
           //動いた先のx,y
           let ux = x+dir*u[0];
           let uy =  y+dir*u[1];
-
           for(let k in komas){
             //相手の手番の駒があった時
             if (komas[k].teban =teban ) {
-
               var ugoki = this.ugoki[komas[k].na];
               for(let u of ugoki) {
                 //駒があったらfalse
@@ -310,19 +384,53 @@ export default{
     console.log("そもそも目の前は王様じゃない");
     return false;
   },
+  move:function(idx,i,j){
+    let nari = this.games[0].koma[idx].nari;
+    if(i+1 == this.games[0].koma[idx].teban*(-2) + 3　&& this.games[0].koma[idx].na == "fu" ){
+      //成をtrueにする
+      nari = true;
+      this.move2(idx,i,j,nari);
 
-  move: function(idx,i,j){
+    }
+    else if(i+1 == this.games[0].koma[idx].teban*(-2) + 3　&& this.ginTemochi ){
+      this.openModal();
+      this.gidx = idx;
+      this.gi = i;
+      this.gj = j;
+    }
+    else if(this.games[0].koma[idx].na == "gin" && this.ginNaru){
+
+    this.openModal();
+    this.gidx = idx;
+    this.gi = i;
+    this.gj = j;
+
+  }
+  else{
+    this.move2(idx,i,j,nari);
+  }
+
+  },
+  move2: function(idx,i,j,nari){
     //ここで上段でかつ歩だったら成る
     //上段かの判定　line2 = koma.teban*(-2) + 3;
     //このline2が　yの値になる
     //->line2 ==
     //上段の時　かつふだった
     //銀の時は、その駒が手持ちだったかも把握しなくちゃダメ
-    let nari = this.games[0].koma[idx].nari;
-    if(i+1 == this.games[0].koma[idx].teban*(-2) + 3　&& this.games[0].koma[idx].na == "fu" ||   i+1 == this.games[0].koma[idx].teban*(-2) + 3　&& this.games[0].koma[idx].na == "gin"){
-      //成をtrueにする
-      nari = true;
-    }
+
+  //   let nari = this.games[0].koma[idx].nari;
+  //   if(i+1 == this.games[0].koma[idx].teban*(-2) + 3　&& this.games[0].koma[idx].na == "fu" ){
+  //     //成をtrueにする
+  //     nari = true;
+  //   }
+  //   if( this.games[0].koma[idx].na == "gin"){
+  //
+  //   this.openModal();
+  //
+  // }
+
+
     let ref = db.collection("games").doc("game");
     let tmpkomaarr = [];
     for (let k in this.games[0].koma){
@@ -356,7 +464,6 @@ export default{
       }
       console.log(tmpkomaarr[k]);
       //ここに新しいプログラムを入れる
-
       // let x = 5;
       // if(this.games[0].koma[k].teban==1){
       //           //上
@@ -390,9 +497,6 @@ export default{
       //           }
       //         }
       //ここまで
-
-
-
       //これはこれで一応動いているのだ
       //
       tmpkomaarr[k] = {na:tmpkomaarr[k].na,
@@ -409,9 +513,76 @@ export default{
         koma: tmpkomaarr,
         temochi:newTemochi,
       });
-
     }
   }
 }
-
 </script>
+<style>
+* {
+  box-sizing: border-box;
+  }
+
+/* ポップアップウインドウの設定 */
+.popup {
+  background-color: #efefef;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .8);
+  /* display: block; */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  width: 70vw;
+  height: 55vw;
+  overflow-y: scroll;
+}
+/* チェックボックスの初期設定 */
+#popup-on{
+  display: none;
+}
+/* チェックされたらポップアップウインドウを開く */
+#popup-on:checked + .popup{
+  display: block;
+}
+
+/* 閉じるアイコン（右上） */
+.icon-close{
+  background: #000;
+  color: #fff;
+  font-size: 30px;
+  padding: 0 10px;
+  position: absolute;
+  right: 0;
+}
+
+/* 閉じるボタン */
+.btn-close{
+  background: #000;
+  border-radius: 10px;
+  color: #fff;
+  padding: 10px;
+  cursor: pointer;
+  margin: 10px auto;
+  width: 95%;
+  text-align: center;
+}
+
+/* 開くボタン */
+.btn-open{
+  background: #fff;
+  border-radius: 10px;
+  color: #fff;
+  padding: 10px;
+  cursor: pointer;
+  margin: 10px auto;
+  width: 95%;
+  text-align: center;
+}
+
+/* ポップアップの内容 */
+.popup-content{
+  margin: 40px auto 40px auto;
+  width: 90%;
+}
+</style>
